@@ -1,0 +1,30 @@
+﻿<h2>Điểm danh bằng YOLO</h2>
+<video id="video" autoplay width="320" height="240"></video>
+<canvas id="canvas" style="display:none;"></canvas>
+<button id="snap">Chụp & Gửi YOLO</button>
+
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => video.srcObject = stream);
+
+    document.getElementById('snap').onclick = async () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        const imageBase64 = canvas.toDataURL('image/jpeg');
+
+        const response = await fetch('/api/attendance/yolo-checkin?sessionId=@ViewBag.SessionID', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageBase64 })
+        });
+
+        const result = await response.json();
+        alert(result.message);
+    };
+</script>

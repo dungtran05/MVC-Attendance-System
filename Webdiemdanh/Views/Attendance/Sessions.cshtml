@@ -1,0 +1,31 @@
+﻿@model List<Webdiemdanh.Models.Session>
+
+@{
+    ViewBag.Title = "Tất cả buổi học";
+}
+
+<h2>🗓️ Danh sách buổi học</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Lớp</th>
+            <th>Ngày</th>
+            <th>Thời gian</th>
+            <th>Xem điểm danh</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model)
+        {
+            <tr>
+                <td>@s.Class?.ClassName</td>
+                <td>@s.SessionDate.ToString("dd/MM/yyyy")</td>
+                <td>@s.StartTime - @s.EndTime</td>
+                <td>
+                    <a class="btn btn-sm btn-info" href="/Attendance/Take?sessionId=@s.SessionID">Xem chi tiết</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

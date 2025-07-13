@@ -1,0 +1,51 @@
+﻿@model Webdiemdanh.Models.Class
+@{
+    ViewBag.Title = "Quản lý lớp " + Model.ClassName;
+}
+
+<h2>👥 Danh sách sinh viên - @Model.ClassName</h2>
+
+@if (Model.Students?.Count > 0)
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                int index = 1;
+                foreach (var sc in Model.Students)
+                {
+                    <tr>
+                        <td>@index</td>
+                        <td>@sc.Student.FullName</td>
+                        <td>@sc.Student.Email</td>
+                        <td>
+                            <form asp-action="RemoveStudent" method="post" style="display:inline">
+                                <input type="hidden" name="classId" value="@Model.ClassID" />
+                                <input type="hidden" name="studentId" value="@sc.StudentID" />
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Xác nhận xoá sinh viên này khỏi lớp?')">
+                                    ❌ Xoá
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    index++;
+                }
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>⚠️ Lớp này chưa có sinh viên nào.</p>
+}
+
+<a href="/Class/AddStudents?classId=@Model.ClassID" class="btn btn-success">➕ Thêm nhiều sinh viên</a>
+<a href="/Class/MyClasses" class="btn btn-secondary">⬅ Về danh sách lớp</a>

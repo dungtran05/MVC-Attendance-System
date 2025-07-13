@@ -1,0 +1,30 @@
+﻿@model Webdiemdanh.Models.Session
+@{
+    ViewBag.Title = "Điểm danh lớp " + Model.Class.ClassName;
+}
+
+<h2>📋 Điểm danh - @Model.Class.ClassName (@Model.SessionDate.ToString("dd/MM/yyyy"))</h2>
+
+<form method="post" asp-action="Take" asp-controller="Attendance">
+    <input type="hidden" name="sessionId" value="@Model.SessionID" />
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Họ tên</th>
+                <th>Có mặt</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model.Attendances)
+            {
+                <tr>
+                    <td>@a.Student.FullName</td>
+                    <td>
+                        <input type="checkbox" name="attendance[@a.StudentID]" value="true" @(a.IsPresent ? "checked" : "") />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <button type="submit" class="btn btn-primary">💾 Lưu điểm danh</button>
+</form>

@@ -1,0 +1,88 @@
+﻿@{
+    ViewBag.Title = "Điểm danh bằng khuôn mặt";
+    var sessionId = Context.Request.Query["sessionId"];
+    var userName = User.Identity.Name.ToLower(); // Giả sử userName là FullName đã login
+}
+
+<input type="hidden" id="sessionId" value="@sessionId" />
+<input type="hidden" id="userName" value="@userName" />
+
+<h2>📷 Điểm danh bằng Webcam</h2>
+
+<video id="video" width="400" autoplay></video>
+<br />
+<button id="capture" class="btn btn-primary mt-2">📸 Chụp và Gửi ảnh</button>
+<canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
+<div id="result" class="mt-3 text-success"></div>
+
+@section Scripts {
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture');
+        const resultDiv = document.getElementById('result');
+        const sessionId = document.getElementById('sessionId').value;
+        const userName = document.getElementById('userName').value;
+
+        // Bật webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { resultDiv.innerText = "❌ Không thể mở webcam: " + err; });
+
+        captureButton.onclick = async () => {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+            const formData = new FormData();
+            formData.append("image", blob, "photo.jpg");
+
+            resultDiv.innerHTML = "⏳ Đang nhận diện...";
+
+            fetch("http://localhost:5000/verify", {
+                method: "POST",
+                body: formData
+            })
+            .then(res => res.json())
+            .then(async data => {
+                if (!data.predictions || data.predictions.length === 0) {
+                    resultDiv.innerHTML = "❌ Không nhận diện được ai. Vui lòng thử lại.";
+                    return;
+                }
+
+                const matched = data.predictions.find(p =>
+                    p.class_name.toLowerCase() === userName
+                );
+
+                if (matched) {
+                    resultDiv.innerHTML = `✅ Xin chào ${matched.class_name}! Đang ghi nhận điểm danh...`;
+
+                    const payload = {
+                        sessionId: parseInt(sessionId),
+                        verifiedByFace: true
+                    };
+
+                    const res = await fetch("/Attendance/CheckIn", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (res.ok) {
+                        resultDiv.innerHTML += "<br/>🎉 Điểm danh thành công!";
+                    } else {
+                        const text = await res.text();
+                        resultDiv.innerHTML += `<br/>⚠️ Lỗi khi lưu điểm danh: ${text}`;
+                    }
+                } else {
+                    resultDiv.innerHTML = "❌ Không khớp với tài khoản đăng nhập. Vui lòng thử lại.";
+                }
+            })
+            .catch(err => {
+                resultDiv.innerText = "❌ Lỗi gửi ảnh: " + err;
+            });
+        };
+    </script>
+}

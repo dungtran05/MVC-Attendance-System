@@ -1,0 +1,59 @@
+﻿@{
+    ViewBag.Title = "Đăng ký khuôn mặt";
+    var fullName = User.Identity.Name; // hoặc lấy từ Claims nếu có
+}
+
+<h2>📸 Đăng ký khuôn mặt</h2>
+
+<video id="video" width="320" height="240" autoplay></video>
+<canvas id="canvas" style="display:none;"></canvas>
+<br>
+<button onclick="captureAndSend()" class="btn btn-success mt-2">📤 Gửi đăng ký</button>
+
+<div id="result" class="mt-3 text-success"></div>
+
+<script>
+    const video = document.getElementById("video");
+    const resultDiv = document.getElementById("result");
+    const fullName = "@fullName".toLowerCase(); // gửi tên kèm ảnh
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => video.srcObject = stream)
+        .catch(err => {
+            resultDiv.innerText = "❌ Không thể mở webcam: " + err;
+        });
+
+    function captureAndSend() {
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append("image", blob, "face.jpg");
+            formData.append("name", fullName); // Gửi tên từ Razor
+
+            resultDiv.innerHTML = "⏳ Đang gửi ảnh và đăng ký...";
+
+            fetch("http://localhost:5000/register", {
+                method: "POST",
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.message) {
+                    resultDiv.innerHTML = "✅ " + data.message;
+                } else if (data.error) {
+                    resultDiv.innerHTML = "❌ " + data.error;
+                } else {
+                    resultDiv.innerHTML = JSON.stringify(data);
+                }
+            })
+            .catch(err => {
+                resultDiv.innerHTML = "❌ Lỗi gửi ảnh: " + err;
+            });
+        }, "image/jpeg");
+    }
+</script>

@@ -1,0 +1,50 @@
+﻿@model List<Webdiemdanh.Models.Session>
+@{
+    ViewBag.Title = "Danh sách buổi học";
+}
+
+<h2>🗓️ Danh sách buổi học</h2>
+
+<a href="/Session/Create" class="btn btn-primary mb-3">➕ Thêm buổi học</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Lớp học</th>
+            <th>Giáo viên</th>
+            <th>Ngày</th>
+            <th>Thời gian</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Count == 0)
+        {
+            <tr><td colspan="6">Chưa có buổi học nào.</td></tr>
+        }
+        else
+        {
+            int index = 1;
+            foreach (var s in Model)
+            {
+                <tr>
+                    <td>@index</td>
+                    <td>@s.Class?.ClassName</td>
+                    <td>@s.Class?.Teacher?.FullName</td>
+                    <td>@s.SessionDate.ToString("dd/MM/yyyy")</td>
+                    <td>@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm")</td>
+                    <td>
+                        <a href="/Attendance/Take?sessionId=@s.SessionID" class="btn btn-sm btn-success">📋 Điểm danh</a>
+                        <a href="/Session/Edit/@s.SessionID" class="btn btn-sm btn-warning">✏️ Sửa</a>
+                        <form method="post" asp-controller="Session" asp-action="Delete" asp-route-id="@s.SessionID" style="display:inline;"
+                              onsubmit="return confirm('Bạn có chắc chắn muốn xoá buổi học này?');">
+                            <button type="submit" class="btn btn-sm btn-danger">🗑️ Xoá</button>
+                        </form>
+                    </td>
+                </tr>
+                index++;
+            }
+        }
+    </tbody>
+</table>

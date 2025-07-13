@@ -1,0 +1,26 @@
+﻿@model Webdiemdanh.Models.Class
+
+@{
+    ViewBag.Title = "Sửa thông tin lớp học";
+}
+
+<h2>✏️ Sửa thông tin lớp</h2>
+
+<form asp-action="Edit" method="post" class="mt-3">
+    <input type="hidden" asp-for="ClassID" />
+
+    <div class="form-group mb-3">
+        <label asp-for="ClassName" class="form-label">Tên lớp</label>
+        <input asp-for="ClassName" class="form-control" />
+        <span asp-validation-for="ClassName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">💾 Lưu thay đổi</button>
+        <a asp-action="MyClasses" class="btn btn-secondary">⬅ Quay lại</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

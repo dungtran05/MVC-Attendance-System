@@ -1,0 +1,31 @@
+﻿@model IEnumerable<Webdiemdanh.Models.Attendance>
+
+@{
+    ViewBag.Title = "Lịch sử điểm danh";
+}
+
+<h2>📊 Lịch sử điểm danh</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Lớp</th>
+            <th>Ngày</th>
+            <th>Thời gian</th>
+            <th>Trạng thái</th>
+            <th>Giờ điểm danh</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Session.Class.ClassName</td>
+                <td>@item.Session.SessionDate.ToString("dd/MM/yyyy")</td>
+                <td>@item.Session.StartTime.ToString(@"hh\:mm") - @item.Session.EndTime.ToString(@"hh\:mm")</td>
+                <td>@(item.IsPresent ? "✅ Có mặt" : "❌ Vắng")</td>
+                <td>@(item.CheckedTime?.ToString("HH:mm:ss") ?? "-")</td>
+            </tr>
+        }
+    </tbody>
+</table>

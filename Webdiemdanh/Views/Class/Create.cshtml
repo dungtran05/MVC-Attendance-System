@@ -1,0 +1,111 @@
+﻿@model Webdiemdanh.Models.Class
+
+@{
+    ViewBag.Title = "Tạo lớp học";
+    var isCreated = Model?.ClassID > 0;
+    var allStudents = ViewBag.AllStudents as List<Webdiemdanh.Models.User>;
+}
+
+<h2>📚 Tạo lớp học</h2>
+
+@if (!isCreated)
+{
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="ClassName" class="form-label">Tên lớp:</label>
+            <input asp-for="ClassName" class="form-control" required />
+            <span asp-validation-for="ClassName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Giáo viên:</label>
+            <input class="form-control" value="@User.Identity.Name" readonly />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Tạo lớp</button>
+    </form>
+}
+else
+{
+    <h4>✅ Lớp học đã được tạo: <strong>@Model.ClassName</strong></h4>
+    <p><strong>👨‍🏫 Giáo viên:</strong> @Model.Teacher?.FullName</p>
+}
+
+@if (isCreated)
+{
+    <hr />
+    <h3>👥 Danh sách sinh viên trong lớp: @Model.ClassName</h3>
+
+    @if (Model.Students != null && Model.Students.Any())
+    {
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Mã sinh viên</th>
+                    <th>Họ tên</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    int stt = 1;
+                    foreach (var studentInClass in Model.Students)
+                    {
+                        <tr>
+                            <td>@stt</td>
+                            <td>@studentInClass.StudentID</td>
+                            <td>@studentInClass.Student?.FullName</td>
+                        </tr>
+                        stt++;
+                    }
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>❗ Lớp chưa có sinh viên nào.</p>
+    }
+
+    <hr />
+    <h4>➕ Thêm sinh viên vào lớp</h4>
+
+    <form asp-action="AddStudentsToClassDefault" asp-controller="Class" method="post">
+        <input type="hidden" name="classId" value="@Model.ClassID" />
+
+        @if (allStudents != null && allStudents.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Chọn</th>
+                            <th>Mã SV</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var student in allStudents)
+                        {
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="selectedStudentIds" value="@student.UserID" />
+                                </td>
+                                <td>@student.UserID</td>
+                                <td>@student.FullName</td>
+                                <td>@student.Email</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <button type="submit" class="btn btn-success">Thêm sinh viên đã chọn</button>
+        }
+        else
+        {
+            <p class="text-danger">Không còn sinh viên nào để thêm.</p>
+        }
+    </form>
+
+}

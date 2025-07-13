@@ -1,0 +1,29 @@
+﻿@model List<Webdiemdanh.Models.Session>
+
+<h2>🕐 Buổi học đang diễn ra</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Lớp</th>
+            <th>Giáo viên</th>
+            <th>Thời gian</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var session in Model)
+        {
+            <tr>
+                <td>@session.Class?.ClassName</td>
+                <td>@session.Class?.Teacher?.FullName</td>  
+                <td>@session.StartTime - @session.EndTime</td>
+                <td>
+                    <a href="/Attendance/Mark?sessionId=@session.SessionID" class="btn btn-success">
+                        ✅ Vào điểm danh
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

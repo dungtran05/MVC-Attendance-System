@@ -1,0 +1,44 @@
+﻿@model List<Webdiemdanh.Models.User>
+@{
+    ViewBag.Title = "Thêm sinh viên vào lớp";
+    int classId = (int)ViewBag.ClassId;
+}
+
+<h2>📋 Chọn sinh viên để thêm vào lớp</h2>
+
+@if (Model.Count == 0)
+{
+    <p>⚠️ Tất cả sinh viên đã thuộc lớp này.</p>
+    <a href="/Class/Manage/@classId" class="btn btn-secondary">⬅ Quay lại</a>
+}
+else
+{
+    <form method="post" asp-action="AddStudentsToClass">
+        <input type="hidden" name="classId" value="@classId" />
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Chọn</th>
+                    <th>Họ tên</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var student in Model)
+                {
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="selectedStudentIds" value="@student.UserID" />
+                        </td>
+                        <td>@student.FullName</td>
+                        <td>@student.Email</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-success">➕ Thêm vào lớp</button>
+        <a href="/Class/Manage/@classId" class="btn btn-secondary">⬅ Quay lại</a>
+    </form>
+}

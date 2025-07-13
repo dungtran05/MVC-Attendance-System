@@ -1,0 +1,45 @@
+﻿@model List<Webdiemdanh.Models.Session>
+
+@{
+    ViewBag.Title = "Danh sách buổi học theo lớp";
+    var classId = ViewBag.ClassId;
+    var className = ViewBag.ClassName;
+}
+
+<h2>📘 Buổi học của lớp: <strong>@className</strong></h2>
+
+<div class="mb-3">
+    <a href="/Class/Manage/@classId" class="btn btn-secondary">⬅️ Quản lý lớp</a>
+    <a href="/Class" class="btn btn-dark">🏫 Danh sách lớp</a>
+    <a href="/Session/Create?classId=@classId" class="btn btn-success">➕ Tạo buổi học mới</a>
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Ngày</th>
+            <th>Thời gian</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Count == 0)
+        {
+            <tr><td colspan="3">❗ Chưa có buổi học nào.</td></tr>
+        }
+        else
+        {
+            foreach (var s in Model)
+            {
+                <tr>
+                    <td>@s.SessionDate.ToString("dd/MM/yyyy")</td>
+                    <td>@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm")</td>
+                    <td>
+                        <a href="/Attendance/BySession?sessionId=@s.SessionID" class="btn btn-info btn-sm">📄 Xem điểm danh</a>
+                        <a href="/Attendance/Take?sessionId=@s.SessionID" class="btn btn-warning btn-sm">📝 Ghi điểm danh</a>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

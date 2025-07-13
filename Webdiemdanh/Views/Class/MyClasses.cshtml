@@ -1,0 +1,52 @@
+﻿@model List<Webdiemdanh.Models.Class>
+
+@{
+    ViewBag.Title = "Danh sách lớp học";
+}
+
+<h2>📚 Danh sách lớp học</h2>
+
+<a href="/Class/Create" class="btn btn-success mb-3">➕ Tạo lớp học mới</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Tên lớp</th>
+            <th>Mã lớp</th>
+            <th>Giáo viên</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Count == 0)
+        {
+            <tr><td colspan="5">Không có lớp nào.</td></tr>
+        }
+        else
+        {
+            int index = 1;
+            foreach (var c in Model)
+            {
+                <tr>
+                    <td>@index</td>
+                    <td>@c.ClassName</td>
+                    <td>PTIT-@c.ClassName-@c.ClassID</td>
+                    <td>@c.Teacher?.FullName</td>
+                    <td>
+                        <a href="/Session/Create?classId=@c.ClassID" class="btn btn-sm btn-primary">+ Buổi học</a>
+                        <a href="/Attendance/SessionsByClass?classId=@c.ClassID" class="btn btn-sm btn-dark">📘 Buổi học</a>
+                        <a href="/Class/AddStudents?classId=@c.ClassID" class="btn btn-sm btn-success">➕ Sinh Viên</a>
+                        <a href="/Class/Manage/@c.ClassID" class="btn btn-sm btn-info">👥 Sinh Viên</a>
+                        <a href="/Class/Edit/@c.ClassID" class="btn btn-sm btn-warning">✏️ Sửa</a>
+                        <form method="post" asp-controller="Class" asp-action="Delete" asp-route-id="@c.ClassID" style="display:inline"
+                              onsubmit="return confirm('Bạn có chắc muốn xoá lớp học này không?');">
+                            <button type="submit" class="btn btn-sm btn-danger">🗑️ Xoá</button>
+                        </form>
+                    </td>
+                </tr>
+                index++;
+            }
+        }
+    </tbody>
+</table>

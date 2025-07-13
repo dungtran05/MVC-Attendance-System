@@ -1,0 +1,25 @@
+﻿@model List<Webdiemdanh.Models.Session>
+
+<h2>📚 Buổi học đang diễn ra</h2>
+
+@foreach (var session in Model)
+{
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Lớp:</strong> @session.Class.ClassName |
+                <strong>Thời gian:</strong> @session.StartTime.ToString(@"hh\:mm") - @session.EndTime.ToString(@"hh\:mm")
+            </div>
+            <a href="/Attendance/BySession?sessionId=@session.SessionID" class="btn btn-sm btn-info">📄 Chi tiết</a>
+        </div>
+        <div class="card-body">
+            <h5>Danh sách điểm danh:</h5>
+            <ul>
+                @foreach (var att in session.Attendances)
+                {
+                    <li>@att.Student.FullName - @(att.IsPresent ? "✅ Có mặt" : "❌ Vắng")</li>
+                }
+            </ul>
+        </div>
+    </div>
+}

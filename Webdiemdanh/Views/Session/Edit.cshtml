@@ -1,0 +1,26 @@
+﻿@model Webdiemdanh.Models.Session
+@{
+    ViewBag.Title = "Sửa buổi học";
+}
+
+<h2>✏️ Sửa buổi học</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="SessionID" />
+    <input type="hidden" asp-for="ClassID" />
+    <div class="mb-3">
+        <label asp-for="SessionDate" class="form-label">Ngày học:</label>
+        <input asp-for="SessionDate" type="date" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label asp-for="StartTime" class="form-label">Giờ bắt đầu:</label>
+        <input asp-for="StartTime" type="time" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label asp-for="EndTime" class="form-label">Giờ kết thúc:</label>
+        <input asp-for="EndTime" type="time" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-warning">Cập nhật</button>
+</form>
+
+<a href="/Attendance/Sessions" class="btn btn-secondary mt-3">⬅️ Quay lại danh sách</a>

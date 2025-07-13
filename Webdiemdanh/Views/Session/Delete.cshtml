@@ -1,0 +1,27 @@
+﻿@model Webdiemdanh.Models.Session
+@{
+    ViewBag.Title = "Xoá buổi học";
+}
+
+<h2>🗑️ Xác nhận xoá buổi học</h2>
+
+<div class="alert alert-warning">
+    Bạn có chắc muốn xoá buổi học này không?
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Lớp:</dt>
+    <dd class="col-sm-9">@Model.Class?.ClassName</dd>
+
+    <dt class="col-sm-3">Ngày:</dt>
+    <dd class="col-sm-9">@Model.SessionDate.ToString("dd/MM/yyyy")</dd>
+
+    <dt class="col-sm-3">Thời gian:</dt>
+    <dd class="col-sm-9">@Model.StartTime - @Model.EndTime</dd>
+</dl>
+
+<form asp-action="DeleteConfirmed" method="post">
+    <input type="hidden" asp-for="SessionID" />
+    <button type="submit" class="btn btn-danger">Xoá</button>
+    <a href="/Attendance/Sessions" class="btn btn-secondary">Huỷ</a>
+</form>

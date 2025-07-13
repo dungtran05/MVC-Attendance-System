@@ -1,0 +1,125 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Điểm danh AI</title>
+    <link rel="apple-touch-icon" href="~/assets/img/apple-icon.png" />
+    <link rel="shortcut icon" href="~/assets/img/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="~/assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/assets/css/boxicon.min.css" />
+    <link rel="stylesheet" href="~/assets/css/templatemo.css" />
+    <link rel="stylesheet" href="~/assets/css/custom.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" />
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand h1" href="/">
+                <i class='bx bx-camera bx-sm text-primary'></i>
+                <span class="h4 text-dark">Face</span><span class="h4 text-primary">Check</span>
+            </a>
+
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbar-toggler-success" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse flex-fill d-lg-flex justify-content-lg-between"
+                 id="navbar-toggler-success">
+                <ul class="nav navbar-nav d-flex justify-content-center mx-xl-5 text-center">
+                    <li class="nav-item">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            if (User.IsInRole("Teacher"))
+                            {
+                                <a class="nav-link" asp-controller="Teacher" asp-action="Dashboard">🏠 Trang chủ</a>
+                            }
+                            else if (User.IsInRole("Student"))
+                            {
+                                <a class="nav-link" asp-controller="Student" asp-action="Dashboard">🏠 Trang chủ</a>
+                            }
+                            else
+                            {
+                                <a class="nav-link" asp-controller="Home" asp-action="Index">🏠 Trang chủ</a>
+                            }
+                        }
+                        else
+                        {
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">🏠 Trang chủ</a>
+                        }
+                    </li>
+
+
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        if (User.IsInRole("Teacher"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Class" asp-action="MyClasses">📘 Quản lý lớp học</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Session" asp-action="MySessions">📘 Quản lý buổi học</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Attendance" asp-action="CurrentTeacherSessions">👨‍🏫 Buổi đang diễn ra</a>
+                            </li>
+                        }
+                        else if (User.IsInRole("Student"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Attendance" asp-action="CurrentStudentSessions">📝 Vào điểm danh</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Attendance" asp-action="MyHistory">📊 Lịch sử điểm danh</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Face" asp-action="RegisterFace">📷 Đăng ký khuôn mặt</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Student" asp-action="Profile">👤 Thông tin cá nhân</a>
+                            </li>
+
+                        }
+
+                        <li class="nav-item">
+                            <a class="nav-link text-danger" asp-controller="Auth" asp-action="Logout">🚪 Đăng xuất</a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link text-primary" asp-controller="Auth" asp-action="Login">🔐 Đăng nhập</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-success" asp-controller="Auth" asp-action="Register">📝 Đăng ký</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main role="main" class="container py-4">
+        @RenderBody()
+    </main>
+
+    <footer class="bg-dark text-light text-center py-4">
+        <div class="container">
+            <p class="mb-1">© @DateTime.Now.Year - Hệ thống điểm danh bằng khuôn mặt</p>
+            <p class="mb-0">Powered by ASP.NET Core MVC & YOLOv8</p>
+        </div>
+    </footer>
+
+    <script src="~/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="~/assets/js/jquery.min.js"></script>
+    <script src="~/assets/js/templatemo.js"></script>
+    <script src="~/assets/js/custom.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+
+</html>
