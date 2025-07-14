@@ -1,39 +1,50 @@
 ﻿@model Webdiemdanh.Models.User
+
 @{
     ViewBag.Title = "Thông tin sinh viên";
 }
 
-<h2>🎓 Thông tin cá nhân</h2>
+<div class="container mt-4">
+    <h2 class="text-primary">🎓 Thông tin cá nhân</h2>
 
-<table class="table table-bordered">
-    <tr>
-        <th>Họ và tên</th>
-        <td>@Model.FullName</td>
-    </tr>
-    <tr>
-        <th>Email</th>
-        <td>@Model.Email</td>
-    </tr>
-    <tr>
-        <th>Vai trò</th>
-        <td>@Model.Role</td>
-    </tr>
-    <tr>
-        <th>Lớp đang học</th>
-        <td>
-            @if (Model.StudentClasses != null && Model.StudentClasses.Any())
-            {
-                <ul>
-                    @foreach (var cls in Model.StudentClasses)
+    <table class="table table-striped table-bordered mt-4">
+        <tbody>
+            <tr>
+                <th style="width: 200px;">👤 Họ và tên</th>
+                <td>@Model.FullName</td>
+            </tr>
+            <tr>
+                <th>📧 Email</th>
+                <td>@Model.Email</td>
+            </tr>
+            <tr>
+                <th>🔑 Vai trò</th>
+                <td>@Model.Role</td>
+            </tr>
+            <tr>
+                <th>Lớp đang học</th>
+                <td>
+                    @if (Model.StudentClasses != null && Model.StudentClasses.Any())
                     {
-                        <li>@cls.Class.ClassName</li>
+                        <ul>
+                            @foreach (var cls in Model.StudentClasses)
+                            {
+                                <li>
+                                    @cls.Class.ClassName –
+                                    <span class="text-muted fst-italic">
+                                        GV: @cls.Class.Teacher?.FullName 
+                                    </span>
+                                </li>
+                            }
+                        </ul>
                     }
-                </ul>
-            }
-            else
-            {
-                <em>Chưa tham gia lớp nào.</em>
-            }
-        </td>
-    </tr>
-</table>
+                    else
+                    {
+                        <em>Chưa tham gia lớp nào.</em>
+                    }
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+</div>

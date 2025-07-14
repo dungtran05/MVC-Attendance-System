@@ -1,29 +1,53 @@
 ﻿@model List<Webdiemdanh.Models.Session>
 
-<h2>🕐 Buổi học đang diễn ra</h2>
+@{
+    ViewBag.Title = "Buổi học đang diễn ra";
+}
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Lớp</th>
-            <th>Giáo viên</th>
-            <th>Thời gian</th>
-            <th>Hành động</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var session in Model)
-        {
-            <tr>
-                <td>@session.Class?.ClassName</td>
-                <td>@session.Class?.Teacher?.FullName</td>  
-                <td>@session.StartTime - @session.EndTime</td>
-                <td>
-                    <a href="/Attendance/Mark?sessionId=@session.SessionID" class="btn btn-success">
-                        ✅ Vào điểm danh
-                    </a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="text-primary mb-4">🕐 Buổi học đang diễn ra</h2>
+
+            @if (!Model.Any())
+            {
+                <div class="alert alert-warning">
+                    ❗ Không có buổi học nào đang diễn ra hiện tại.
+                </div>
+            }
+            else
+            {
+                <table class="table table-bordered table-hover align-middle text-center">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th>#</th>
+                            <th>Lớp học</th>
+                            <th>Giáo viên</th>
+                            <th>Thời gian</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int index = 1;
+                            foreach (var session in Model)
+                            {
+                                <tr>
+                                    <td class="text-center">@index</td>
+                                    <td class="fw-semibold">@session.Class?.ClassName</td>
+                                    <td>@session.Class?.Teacher?.FullName</td>
+                                    <td>
+                                        @session.StartTime.ToString(@"hh\:mm") - @session.EndTime.ToString(@"hh\:mm")<br />
+                                        <span class="text-muted">(@session.SessionDate.ToString("dd/MM/yyyy"))</span>
+                                    </td>
+                                   
+                                </tr>
+                                index++;
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

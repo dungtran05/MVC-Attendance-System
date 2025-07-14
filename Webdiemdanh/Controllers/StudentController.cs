@@ -21,13 +21,18 @@ namespace Webdiemdanh.Controllers
         public async Task<IActionResult> Profile()
         {
             int studentId = int.Parse(User.FindFirst("UserID").Value);
+
             var student = await _context.Users
-                .Include(u => u.StudentClasses).ThenInclude(sc => sc.Class)
+                .Include(u => u.StudentClasses)
+                    .ThenInclude(sc => sc.Class)
+                        .ThenInclude(c => c.Teacher) // 👈 Thêm để lấy giáo viên
                 .FirstOrDefaultAsync(u => u.UserID == studentId);
 
-            if (student == null) return NotFound();
+            if (student == null)
+                return NotFound("Không tìm thấy sinh viên.");
 
             return View(student);
         }
+
     }
 }

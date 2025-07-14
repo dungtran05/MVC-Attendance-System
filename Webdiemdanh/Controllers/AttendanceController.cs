@@ -33,15 +33,43 @@ namespace Webdiemdanh.Controllers
         [Authorize(Roles = "Teacher")]
         public IActionResult BySession(int sessionId)
         {
+            // Lấy danh sách điểm danh đã có (nếu có)
             var attendance = _context.Attendances
                 .Include(a => a.Student)
                 .Include(a => a.Session)
-                .ThenInclude(s => s.Class)
+                    .ThenInclude(s => s.Class)
                 .Where(a => a.SessionID == sessionId)
                 .ToList();
 
-            return View(attendance); // Views/Attendance/BySession.cshtml
+            if (attendance.Any())
+            {
+                // Nếu đã có điểm danh thì trả về danh sách này
+                return View(attendance);
+            }
+
+            // Nếu chưa có điểm danh, tạo danh sách giả từ danh sách sinh viên
+            var session = _context.Sessions
+                .Include(s => s.Class)
+                    .ThenInclude(c => c.Students)
+                        .ThenInclude(sc => sc.Student)
+                .FirstOrDefault(s => s.SessionID == sessionId);
+
+            if (session == null) return NotFound();
+
+            // Tạo danh sách giả - tất cả sinh viên chưa điểm danh
+            var fakeAttendance = session.Class.Students.Select(sc => new Attendance
+            {
+                SessionID = session.SessionID,
+                Session = session,
+                StudentID = sc.StudentID,
+                Student = sc.Student,
+                IsPresent = false,
+                CheckedTime = null
+            }).ToList();
+
+            return View(fakeAttendance);
         }
+
         [Authorize(Roles = "Teacher")]
         public IActionResult CurrentTeacherSessions()
         {
@@ -51,7 +79,10 @@ namespace Webdiemdanh.Controllers
 
             var sessions = _context.Sessions
                 .Include(s => s.Class)
-                .Include(s => s.Attendances).ThenInclude(a => a.Student)
+                    .ThenInclude(c => c.Students)
+                        .ThenInclude(sc => sc.Student)
+                .Include(s => s.Attendances)
+                    .ThenInclude(a => a.Student)
                 .Where(s =>
                     s.Class.TeacherID == teacherId &&
                     s.SessionDate == today &&
@@ -61,8 +92,24 @@ namespace Webdiemdanh.Controllers
                 .OrderBy(s => s.StartTime)
                 .ToList();
 
+            // Tạo bản điểm danh tạm thời nếu chưa ai điểm danh
+            foreach (var session in sessions)
+            {
+                if (session.Attendances == null || !session.Attendances.Any())
+                {
+                    session.Attendances = session.Class.Students.Select(sc => new Attendance
+                    {
+                        StudentID = sc.StudentID,
+                        Student = sc.Student,
+                        IsPresent = false,
+                        CheckedTime = null
+                    }).ToList();
+                }
+            }
+
             return View("CurrentTeacherSessions", sessions);
         }
+
         [Authorize(Roles = "Student")]
         public IActionResult CurrentStudentSessions()
         {
@@ -202,10 +249,14 @@ namespace Webdiemdanh.Controllers
         [Authorize(Roles = "Teacher")]
         public IActionResult Take(int sessionId, Dictionary<int, bool> attendance)
         {
-            // Lấy danh sách toàn bộ sinh viên trong lớp của session đó
+            if (attendance == null)
+                attendance = new Dictionary<int, bool>();
             var session = _context.Sessions
                 .Include(s => s.Class)
                 .FirstOrDefault(s => s.SessionID == sessionId);
+
+            if (session == null || session.Class == null)
+                return NotFound("Không tìm thấy buổi học hoặc lớp tương ứng.");
 
             var studentIds = _context.StudentsInClass
                 .Where(sc => sc.ClassID == session.ClassID)
@@ -245,8 +296,12 @@ namespace Webdiemdanh.Controllers
             }
 
             _context.SaveChanges();
+
+            TempData["Message"] = "✅ Đã lưu điểm danh.";
             return RedirectToAction("BySession", new { sessionId });
         }
+
+
 
         [Authorize(Roles = "Teacher")]
         public IActionResult SessionsByClass(int classId)
@@ -262,6 +317,103 @@ namespace Webdiemdanh.Controllers
             ViewBag.ClassName = sessions.FirstOrDefault()?.Class?.ClassName ?? "Lớp chưa rõ";
 
             return View("SessionsByClass", sessions);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Teacher")]
+        public async Task<IActionResult> CheckInByName([FromBody] CheckInByNameDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.StudentName))
+                return BadRequest("Tên sinh viên không được để trống.");
+
+            var student = await _context.Users
+                .FirstOrDefaultAsync(u => u.FullName.ToLower() == dto.StudentName.ToLower() && u.Role == "Student");
+
+            if (student == null)
+                return BadRequest("Không tìm thấy sinh viên.");
+
+            var session = await _context.Sessions
+                .Include(s => s.Class)
+                .FirstOrDefaultAsync(s => s.SessionID == dto.SessionId);
+
+            if (session == null)
+                return NotFound("Không tìm thấy buổi học.");
+
+            // Kiểm tra sinh viên có trong lớp không
+            bool isStudentInClass = await _context.StudentsInClass
+                .AnyAsync(sc => sc.ClassID == session.ClassID && sc.StudentID == student.UserID);
+
+            if (!isStudentInClass)
+                return BadRequest("Sinh viên không thuộc lớp của buổi học này.");
+
+            var existing = await _context.Attendances
+                .FirstOrDefaultAsync(a => a.SessionID == dto.SessionId && a.StudentID == student.UserID);
+
+            // Nếu đã điểm danh rồi thì không ghi lại nữa
+            if (existing != null && existing.IsPresent)
+            {
+                return Ok(new { message = $"ℹ️ {student.FullName} đã được điểm danh trước đó." });
+            }
+
+            if (existing == null)
+            {
+                existing = new Attendance
+                {
+                    SessionID = dto.SessionId,
+                    StudentID = student.UserID,
+                    IsPresent = true,
+                    VerifiedByFace = dto.VerifiedByFace,
+                    CheckedTime = DateTime.Now
+                };
+                _context.Attendances.Add(existing);
+            }
+            else
+            {
+                // Chỉ cập nhật nếu trước đó chưa điểm danh
+                existing.IsPresent = true;
+                existing.VerifiedByFace = dto.VerifiedByFace;
+                existing.CheckedTime = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = $"✅ Đã điểm danh cho {student.FullName}" });
+        }
+
+
+
+
+        public class CheckInByNameDto
+        {
+            public int SessionId { get; set; }
+            public string StudentName { get; set; }
+            public bool VerifiedByFace { get; set; }
+        }
+
+        [Authorize(Roles = "Teacher")]
+        public IActionResult ScanAll(int sessionId)
+        {
+            var session = _context.Sessions
+                .Include(s => s.Class)
+                    .ThenInclude(c => c.Students)
+                        .ThenInclude(sc => sc.Student)
+                .Include(s => s.Attendances)
+                .FirstOrDefault(s => s.SessionID == sessionId);
+
+            if (session == null)
+                return NotFound("Không tìm thấy buổi học");
+
+            var studentList = session.Class.Students
+                .Select(sc => new StudentAttendanceVM
+                {
+                    FullName = sc.Student.FullName,
+                    IsPresent = session.Attendances.Any(a =>
+                        a.StudentID == sc.Student.UserID && a.IsPresent)
+                })
+                .ToList();
+
+            ViewBag.SessionID = sessionId;
+
+            return View(studentList); // Trả danh sách vào view model
         }
 
 

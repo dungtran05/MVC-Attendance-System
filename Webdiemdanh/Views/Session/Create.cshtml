@@ -1,19 +1,37 @@
 ﻿@model Webdiemdanh.Models.Session
 
-<h2>Tạo buổi học</h2>
+@{
+    ViewBag.Title = "Tạo buổi học";
+}
 
-<form asp-action="Create" method="post">
-    <label>Lớp học:</label>
-    <select asp-for="ClassID" asp-items="ViewBag.Classes" class="form-control"></select>
+<div class="container mt-4">
+    <div class="card shadow-sm p-4">
+        <h3 class="text-primary mb-4">📆 Tạo buổi học mới</h3>
 
-    <label>Ngày học:</label>
-    <input asp-for="SessionDate" type="date" class="form-control" />
+        <form asp-action="Create" method="post">
+            <div class="mb-3">
+                <label for="ClassID" class="form-label">🧑‍🏫 Lớp học:</label>
+                <select asp-for="ClassID" asp-items="ViewBag.Classes" class="form-select"></select>
+            </div>
 
-    <label>Bắt đầu:</label>
-    <input asp-for="StartTime" type="time" class="form-control" />
+            <div class="mb-3">
+                <label for="SessionDate" class="form-label">📅 Ngày học:</label>
+                <input asp-for="SessionDate" type="date" class="form-control" />
+            </div>
 
-    <label>Kết thúc:</label>
-    <input asp-for="EndTime" type="time" class="form-control" />
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="StartTime" class="form-label">🕐 Bắt đầu:</label>
+                    <input asp-for="StartTime" type="time" class="form-control" />
+                </div>
 
-    <button type="submit" class="btn btn-success mt-2">Tạo buổi học</button>
-</form>
+                <div class="col-md-6 mb-3">
+                    <label for="EndTime" class="form-label">🕔 Kết thúc:</label>
+                    <input asp-for="EndTime" type="time" class="form-control" />
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">✅ Tạo buổi học</button>
+        </form>
+    </div>
+</div>

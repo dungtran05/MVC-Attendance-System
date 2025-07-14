@@ -4,28 +4,45 @@
     ViewBag.Title = "Lịch sử điểm danh";
 }
 
-<h2>📊 Lịch sử điểm danh</h2>
+<div class="container mt-4">
+    <h3 class="text-primary mb-4">📊 Lịch sử điểm danh</h3>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Lớp</th>
-            <th>Ngày</th>
-            <th>Thời gian</th>
-            <th>Trạng thái</th>
-            <th>Giờ điểm danh</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Session.Class.ClassName</td>
-                <td>@item.Session.SessionDate.ToString("dd/MM/yyyy")</td>
-                <td>@item.Session.StartTime.ToString(@"hh\:mm") - @item.Session.EndTime.ToString(@"hh\:mm")</td>
-                <td>@(item.IsPresent ? "✅ Có mặt" : "❌ Vắng")</td>
-                <td>@(item.CheckedTime?.ToString("HH:mm:ss") ?? "-")</td>
-            </tr>
-        }
-    </tbody>
-</table>
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning">Bạn chưa có buổi học nào được điểm danh.</div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>🏫 Lớp</th>
+                            <th>📅 Ngày</th>
+                            <th>⏰ Thời gian</th>
+                            <th>✅ Trạng thái</th>
+                            <th>🕓 Giờ điểm danh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var status = item.IsPresent ? "Có mặt" : "Vắng";
+                            var statusClass = item.IsPresent ? "text-success fw-bold" : "text-danger fw-bold";
+                            var checkTime = item.CheckedTime?.ToString("HH:mm:ss") ?? "-";
+
+                            <tr>
+                                <td>@item.Session.Class.ClassName</td>
+                                <td>@item.Session.SessionDate.ToString("dd/MM/yyyy")</td>
+                                <td>@item.Session.StartTime.ToString(@"hh\:mm") - @item.Session.EndTime.ToString(@"hh\:mm")</td>
+                                <td class="@statusClass">@status</td>
+                                <td>@checkTime</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

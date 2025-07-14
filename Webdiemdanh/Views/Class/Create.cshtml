@@ -6,7 +6,7 @@
     var allStudents = ViewBag.AllStudents as List<Webdiemdanh.Models.User>;
 }
 
-<h2>📚 Tạo lớp học</h2>
+<h2 class="mb-4">📚 Tạo lớp học</h2>
 
 @if (!isCreated)
 {
@@ -27,19 +27,21 @@
 }
 else
 {
-    <h4>✅ Lớp học đã được tạo: <strong>@Model.ClassName</strong></h4>
+    <div class="alert alert-success">
+        ✅ Lớp học đã được tạo: <strong>@Model.ClassName</strong>
+    </div>
     <p><strong>👨‍🏫 Giáo viên:</strong> @Model.Teacher?.FullName</p>
 }
 
 @if (isCreated)
 {
     <hr />
-    <h3>👥 Danh sách sinh viên trong lớp: @Model.ClassName</h3>
+    <h3 class="mt-4">👥 Danh sách sinh viên trong lớp: <span class="text-primary">@Model.ClassName</span></h3>
 
     @if (Model.Students != null && Model.Students.Any())
     {
         <table class="table table-bordered mt-3">
-            <thead>
+            <thead class="table-light">
                 <tr>
                     <th>STT</th>
                     <th>Mã sinh viên</th>
@@ -64,20 +66,25 @@ else
     }
     else
     {
-        <p>❗ Lớp chưa có sinh viên nào.</p>
+        <div class="alert alert-warning">❗ Lớp chưa có sinh viên nào.</div>
     }
 
     <hr />
-    <h4>➕ Thêm sinh viên vào lớp</h4>
+    <h4 class="mt-4">➕ Thêm sinh viên vào lớp</h4>
 
     <form asp-action="AddStudentsToClassDefault" asp-controller="Class" method="post">
         <input type="hidden" name="classId" value="@Model.ClassID" />
 
         @if (allStudents != null && allStudents.Any())
         {
+            <div class="mb-3">
+                <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="selectAll()">Chọn tất cả</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="deselectAll()">Bỏ chọn tất cả</button>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-bordered">
-                    <thead>
+                    <thead class="table-light">
                         <tr>
                             <th>Chọn</th>
                             <th>Mã SV</th>
@@ -90,7 +97,7 @@ else
                         {
                             <tr>
                                 <td>
-                                    <input type="checkbox" name="selectedStudentIds" value="@student.UserID" />
+                                    <input type="checkbox" name="selectedStudentIds" class="student-checkbox" value="@student.UserID" />
                                 </td>
                                 <td>@student.UserID</td>
                                 <td>@student.FullName</td>
@@ -100,12 +107,23 @@ else
                     </tbody>
                 </table>
             </div>
-            <button type="submit" class="btn btn-success">Thêm sinh viên đã chọn</button>
+            <button type="submit" class="btn btn-success mt-2">Thêm sinh viên đã chọn</button>
         }
         else
         {
-            <p class="text-danger">Không còn sinh viên nào để thêm.</p>
+            <div class="text-danger">Không còn sinh viên nào để thêm.</div>
         }
     </form>
+}
 
+@section Scripts {
+    <script>
+        function selectAll() {
+            document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = true);
+        }
+
+        function deselectAll() {
+            document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = false);
+        }
+    </script>
 }

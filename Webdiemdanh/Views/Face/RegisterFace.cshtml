@@ -1,59 +1,173 @@
 ﻿@{
     ViewBag.Title = "Đăng ký khuôn mặt";
-    var fullName = User.Identity.Name; // hoặc lấy từ Claims nếu có
+    var fullName = User.Identity.Name ?? "Unknown";
 }
 
-<h2>📸 Đăng ký khuôn mặt</h2>
+<div class="container mt-4">
+    <h2 class="text-primary">📸 Đăng ký khuôn mặt</h2>
 
-<video id="video" width="320" height="240" autoplay></video>
-<canvas id="canvas" style="display:none;"></canvas>
-<br>
-<button onclick="captureAndSend()" class="btn btn-success mt-2">📤 Gửi đăng ký</button>
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <video id="video" class="border rounded w-100" autoplay muted></video>
+            <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
 
-<div id="result" class="mt-3 text-success"></div>
+            <div class="mt-3 d-flex gap-2">
+                <button id="captureBtn" class="btn btn-primary btn-sm">📸 Chụp ảnh</button>
+                <label class="btn btn-outline-secondary btn-sm mb-0">
+                    📂 Chọn ảnh
+                    <input type="file" id="fileInput" accept="image/*" multiple hidden>
+                </label>
+            </div>
+        </div>
 
-<script>
-    const video = document.getElementById("video");
-    const resultDiv = document.getElementById("result");
-    const fullName = "@fullName".toLowerCase(); // gửi tên kèm ảnh
+        <div class="col-md-6">
+            <h5 class="text-secondary">🖼️ Ảnh đã chọn (<span id="count">0</span>/10)</h5>
+            <div id="preview" class="d-flex flex-wrap gap-2 border rounded p-2" style="min-height: 150px;"></div>
 
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => video.srcObject = stream)
-        .catch(err => {
-            resultDiv.innerText = "❌ Không thể mở webcam: " + err;
-        });
+            <button id="sendBtn" class="btn btn-success mt-3" disabled>📤 Gửi đăng ký</button>
+            <div id="result" class="mt-3 text-success small"></div>
+        </div>
+    </div>
+</div>
 
-    function captureAndSend() {
+@section Scripts {
+    <script>
+        const fullName = "@fullName".toLowerCase();
+        const video = document.getElementById("video");
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
+        const captureBtn = document.getElementById("captureBtn");
+        const fileInput = document.getElementById("fileInput");
+        const sendBtn = document.getElementById("sendBtn");
+        const resultDiv = document.getElementById("result");
+        const previewDiv = document.getElementById("preview");
+        const countSpan = document.getElementById("count");
 
-        canvas.toBlob(blob => {
-            const formData = new FormData();
-            formData.append("image", blob, "face.jpg");
-            formData.append("name", fullName); // Gửi tên từ Razor
+        const MAX_IMAGES = 10;
+        const MIN_IMAGES = 5;
+        const TARGET_WIDTH = 320;
+        const TARGET_HEIGHT = 240;
 
-            resultDiv.innerHTML = "⏳ Đang gửi ảnh và đăng ký...";
+        let capturedBlobs = [];
 
-            fetch("http://localhost:5000/register", {
-                method: "POST",
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.message) {
-                    resultDiv.innerHTML = "✅ " + data.message;
-                } else if (data.error) {
-                    resultDiv.innerHTML = "❌ " + data.error;
-                } else {
-                    resultDiv.innerHTML = JSON.stringify(data);
-                }
-            })
-            .catch(err => {
-                resultDiv.innerHTML = "❌ Lỗi gửi ảnh: " + err;
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => video.srcObject = stream)
+            .catch(err => resultDiv.innerText = "❌ Không thể mở webcam: " + err);
+
+        function updateUI() {
+            countSpan.textContent = capturedBlobs.length;
+            sendBtn.disabled = !(capturedBlobs.length >= MIN_IMAGES && capturedBlobs.length <= MAX_IMAGES);
+        }
+
+        function renderImage(blob) {
+            const imgUrl = URL.createObjectURL(blob);
+            const container = document.createElement("div");
+            container.className = "position-relative";
+
+            const img = document.createElement("img");
+            img.src = imgUrl;
+            img.width = 100;
+            img.className = "border rounded";
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.innerText = "✖";
+            deleteBtn.className = "btn btn-danger btn-sm position-absolute";
+            deleteBtn.style.top = "0";
+            deleteBtn.style.right = "0";
+            deleteBtn.style.padding = "2px 6px";
+
+            deleteBtn.onclick = () => {
+                const index = Array.from(previewDiv.children).indexOf(container);
+                capturedBlobs.splice(index, 1);
+                container.remove();
+                updateUI();
+            };
+
+            container.appendChild(img);
+            container.appendChild(deleteBtn);
+            previewDiv.appendChild(container);
+        }
+
+        function resizeToBlob(file) {
+            return new Promise(resolve => {
+                const image = new Image();
+                image.onload = () => {
+                    ctx.clearRect(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+                    ctx.drawImage(image, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+                    canvas.toBlob(blob => resolve(blob), "image/jpeg");
+                };
+                image.src = URL.createObjectURL(file);
             });
-        }, "image/jpeg");
-    }
-</script>
+        }
+
+        captureBtn.onclick = () => {
+            if (capturedBlobs.length >= MAX_IMAGES) {
+                alert("Bạn chỉ được chọn tối đa 10 ảnh.");
+                return;
+            }
+
+            ctx.drawImage(video, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+            canvas.toBlob(blob => {
+                capturedBlobs.push(blob);
+                renderImage(blob);
+                updateUI();
+            }, "image/jpeg");
+        };
+
+        fileInput.onchange = () => {
+            const files = Array.from(fileInput.files);
+            const available = MAX_IMAGES - capturedBlobs.length;
+
+            if (files.length > available) {
+                alert(`Bạn chỉ có thể thêm tối đa ${available} ảnh.`);
+                return;
+            }
+
+            for (const file of files) {
+                if (!file.type.startsWith("image/")) continue;
+
+                resizeToBlob(file).then(blob => {
+                    capturedBlobs.push(blob);
+                    renderImage(blob);
+                    updateUI();
+                });
+            }
+
+            fileInput.value = '';
+        };
+
+        sendBtn.onclick = async () => {
+            if (capturedBlobs.length < MIN_IMAGES || capturedBlobs.length > MAX_IMAGES) {
+                alert("Bạn cần gửi từ 5 đến 10 ảnh.");
+                return;
+            }
+
+            resultDiv.innerHTML = "⏳ Đang gửi ảnh...<br/>";
+
+            for (let i = 0; i < capturedBlobs.length; i++) {
+                const blob = capturedBlobs[i];
+                const formData = new FormData();
+                formData.append("image", blob, `face${i + 1}.jpg`);
+                formData.append("name", fullName);
+
+                try {
+                    const res = await fetch("http://localhost:5000/register", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const data = await res.json();
+                    if (data.message) {
+                        resultDiv.innerHTML += `✅ Ảnh ${i + 1}: ${data.message}<br/>`;
+                    } else {
+                        resultDiv.innerHTML += `❌ Ảnh ${i + 1}: ${data.error || "Lỗi không rõ"}<br/>`;
+                    }
+                } catch (err) {
+                    resultDiv.innerHTML += `❌ Ảnh ${i + 1}: lỗi gửi - ${err}<br/>`;
+                }
+            }
+
+            resultDiv.innerHTML += "<br/>🎉 Hoàn tất đăng ký!";
+        };
+    </script>
+}

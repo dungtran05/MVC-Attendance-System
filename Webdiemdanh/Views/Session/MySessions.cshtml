@@ -36,6 +36,7 @@
                     <td>@s.StartTime.ToString(@"hh\:mm") - @s.EndTime.ToString(@"hh\:mm")</td>
                     <td>
                         <a href="/Attendance/Take?sessionId=@s.SessionID" class="btn btn-sm btn-success">📋 Điểm danh</a>
+                        <a href="/Attendance/ScanAll?sessionId=@s.SessionID" class="btn btn-success btn-sm">📸 Quét khuôn mặt</a>
                         <a href="/Session/Edit/@s.SessionID" class="btn btn-sm btn-warning">✏️ Sửa</a>
                         <form method="post" asp-controller="Session" asp-action="Delete" asp-route-id="@s.SessionID" style="display:inline;"
                               onsubmit="return confirm('Bạn có chắc chắn muốn xoá buổi học này?');">

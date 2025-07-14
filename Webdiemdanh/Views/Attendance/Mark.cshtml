@@ -1,88 +1,90 @@
 ﻿@{
-    ViewBag.Title = "Điểm danh bằng khuôn mặt";
+    ViewBag.Title = "Điểm danh nhiều sinh viên";
     var sessionId = Context.Request.Query["sessionId"];
-    var userName = User.Identity.Name.ToLower(); // Giả sử userName là FullName đã login
 }
 
 <input type="hidden" id="sessionId" value="@sessionId" />
-<input type="hidden" id="userName" value="@userName" />
 
-<h2>📷 Điểm danh bằng Webcam</h2>
+<h2>🎥 Điểm danh nhiều sinh viên qua Webcam</h2>
 
 <video id="video" width="400" autoplay></video>
 <br />
-<button id="capture" class="btn btn-primary mt-2">📸 Chụp và Gửi ảnh</button>
+<button id="start" class="btn btn-success mt-2">🚀 Bắt đầu điểm danh</button>
 <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
-<div id="result" class="mt-3 text-success"></div>
+<div id="result" class="mt-3 text-info"></div>
 
 @section Scripts {
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
-        const captureButton = document.getElementById('capture');
         const resultDiv = document.getElementById('result');
         const sessionId = document.getElementById('sessionId').value;
-        const userName = document.getElementById('userName').value;
+        const startButton = document.getElementById('start');
 
-        // Bật webcam
+        let detected = new Set();
+
         navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => { video.srcObject = stream; })
-            .catch(err => { resultDiv.innerText = "❌ Không thể mở webcam: " + err; });
+            .then(stream => video.srcObject = stream)
+            .catch(err => resultDiv.innerText = "❌ Không thể mở webcam: " + err);
 
-        captureButton.onclick = async () => {
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        async function sendFrame() {
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
 
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+
             const formData = new FormData();
-            formData.append("image", blob, "photo.jpg");
+            formData.append("image", blob, "frame.jpg");
 
-            resultDiv.innerHTML = "⏳ Đang nhận diện...";
+            try {
+                const response = await fetch("http://localhost:5000/verify", {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await response.json();
 
-            fetch("http://localhost:5000/verify", {
-                method: "POST",
-                body: formData
-            })
-            .then(res => res.json())
-            .then(async data => {
-                if (!data.predictions || data.predictions.length === 0) {
-                    resultDiv.innerHTML = "❌ Không nhận diện được ai. Vui lòng thử lại.";
-                    return;
-                }
+                if (data.predictions) {
+                    for (const pred of data.predictions) {
+                        const name = pred.class_name;
+                        if (!detected.has(name)) {
+                            detected.add(name);
+                            resultDiv.innerHTML += `✅ Nhận diện: ${name}<br/>`;
 
-                const matched = data.predictions.find(p =>
-                    p.class_name.toLowerCase() === userName
-                );
+                            // Gửi điểm danh lên .NET Core backend
+                            const payload = {
+                                sessionId: parseInt(sessionId),
+                                verifiedByFace: true,
+                                studentName: name // giả định backend hỗ trợ theo tên
+                            };
 
-                if (matched) {
-                    resultDiv.innerHTML = `✅ Xin chào ${matched.class_name}! Đang ghi nhận điểm danh...`;
-
-                    const payload = {
-                        sessionId: parseInt(sessionId),
-                        verifiedByFace: true
-                    };
-
-                    const res = await fetch("/Attendance/CheckIn", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (res.ok) {
-                        resultDiv.innerHTML += "<br/>🎉 Điểm danh thành công!";
-                    } else {
-                        const text = await res.text();
-                        resultDiv.innerHTML += `<br/>⚠️ Lỗi khi lưu điểm danh: ${text}`;
+                            await fetch("/Attendance/CheckInByName", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(payload)
+                            });
+                        }
                     }
-                } else {
-                    resultDiv.innerHTML = "❌ Không khớp với tài khoản đăng nhập. Vui lòng thử lại.";
                 }
-            })
-            .catch(err => {
-                resultDiv.innerText = "❌ Lỗi gửi ảnh: " + err;
-            });
+            } catch (err) {
+                console.error("❌ Lỗi gửi ảnh:", err);
+            }
+        }
+
+        startButton.onclick = async () => {
+            resultDiv.innerHTML = "🔍 Đang quét trong 10 giây...";
+            detected.clear();
+
+            let count = 0;
+            const interval = setInterval(async () => {
+                await sendFrame();
+                count++;
+                if (count >= 10) {
+                    clearInterval(interval);
+                    resultDiv.innerHTML += "<br/>✅ Quét xong.";
+                }
+            }, 1000);
         };
     </script>
 }

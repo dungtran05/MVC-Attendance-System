@@ -1,0 +1,155 @@
+﻿@model List<Webdiemdanh.Data.StudentAttendanceVM>
+@{
+    ViewBag.Title = "Điểm danh bằng khuôn mặt";
+    var sessionId = ViewBag.SessionID;
+}
+
+<div class="container mt-4">
+    <h2 class="text-primary mb-3">📷 Giáo viên - Ghi hình và điểm danh sinh viên trong lớp</h2>
+
+    <input type="hidden" id="sessionId" value="@sessionId" />
+
+    <div class="card shadow-sm p-3 mb-4">
+        <div class="text-center">
+            <video id="video" width="400" class="border rounded shadow-sm" autoplay muted></video>
+            <div class="mt-3">
+                <button id="startBtn" class="btn btn-success me-2">🚀 Bắt đầu ghi hình</button>
+                <button id="stopBtn" class="btn btn-danger" disabled>⛔ Kết thúc</button>
+            </div>
+        </div>
+        <div id="result" class="alert alert-info mt-4" style="min-height: 60px;"></div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="card shadow-sm p-3">
+            <h4 class="text-secondary">📋 Danh sách sinh viên trong lớp</h4>
+            <ul id="studentList" class="list-group mt-2">
+                @foreach (var student in Model)
+                {
+                    var id = student.FullName.Replace(" ", "").ToLower();
+                    <li id="student-@id" class="list-group-item d-flex justify-content-between align-items-center">
+                        @student.FullName
+                        <span class="badge @(student.IsPresent ? "bg-success" : "bg-warning text-dark")">
+                            @(student.IsPresent ? "✅ Có mặt" : "⏳ Chưa điểm danh")
+                        </span>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+    else
+    {
+        <p class="alert alert-warning mt-3">⚠️ Không có sinh viên nào trong lớp.</p>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        const video = document.getElementById('video');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resultDiv = document.getElementById('result');
+        const sessionId = document.getElementById('sessionId').value;
+
+        let stream;
+        let intervalId;
+        const sentNames = new Set();
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        function normalizeName(name) {
+            return name.toLowerCase().replace(/\s+/g, '');
+        }
+
+        function updateStudentUI(name) {
+            const id = "student-" + normalizeName(name);
+            const li = document.getElementById(id);
+            if (li) {
+                li.innerHTML = `
+                    ${name}
+                    <span class="badge bg-success">✅ Có mặt</span>
+                `;
+            }
+        }
+
+        function displayUniqueNameOnce(name) {
+            const norm = normalizeName(name);
+            if (!document.getElementById("result-" + norm)) {
+                const div = document.createElement("div");
+                div.id = "result-" + norm;
+                div.className = "text-success fw-bold";
+                div.textContent = `✅ Đã điểm danh: ${name}`;
+                resultDiv.appendChild(div);
+            }
+        }
+
+        async function sendFrameToAPI() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+
+            canvas.toBlob(async blob => {
+                const formData = new FormData();
+                formData.append("image", blob, "frame.jpg");
+
+                try {
+                    const res = await fetch("http://localhost:5000/verify_frame?image", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const data = await res.json();
+                    const predictions = data.predictions || [];
+
+                    for (const pred of predictions) {
+                        const name = pred.class_name;
+                        if (sentNames.has(name)) continue;
+
+                        await fetch("/Attendance/CheckInByName", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                sessionId: parseInt(sessionId),
+                                verifiedByFace: true,
+                                studentName: name
+                            })
+                        });
+
+                        sentNames.add(name);
+                        updateStudentUI(name);
+                        displayUniqueNameOnce(name);
+                    }
+                } catch (err) {
+                    console.error("❌ Lỗi gửi frame:", err);
+                }
+            }, "image/jpeg");
+        }
+
+        startBtn.onclick = async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = stream;
+                resultDiv.innerHTML = "🔁 Đang ghi hình... ";
+
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                intervalId = setInterval(sendFrameToAPI, 2000);
+            } catch (err) {
+                resultDiv.innerHTML = `<span class="text-danger">❌ Không thể mở webcam: ${err}</span>`;
+            }
+        };
+
+        stopBtn.onclick = () => {
+            clearInterval(intervalId);
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            resultDiv.innerHTML += "<br/><span class='text-danger fw-bold'>⛔ Đã kết thúc ghi hình.</span>";
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        };
+    </script>
+}

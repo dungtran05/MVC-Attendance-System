@@ -2,37 +2,45 @@
 
 @{
     ViewBag.Title = "Điểm danh buổi học";
-    var session = Model.FirstOrDefault()?.Session;
+
+    var session = Model?.FirstOrDefault()?.Session;
     var classId = session?.ClassID ?? 0;
 }
 
-<h2>📄 Danh sách điểm danh - @session?.Class?.ClassName (@session?.SessionDate.ToString("dd/MM/yyyy"))</h2>
+@if (session == null)
+{
+    <div class="alert alert-warning">❗ Không tìm thấy thông tin buổi học hoặc chưa có điểm danh.</div>
+}
+else
+{
+    <h2>📄 Danh sách điểm danh - @session.Class?.ClassName (@session.SessionDate.ToString("dd/MM/yyyy"))</h2>
 
-<div class="mb-3">
-    <a href="/Attendance/Sessions" class="btn btn-secondary">⬅️ Tất cả buổi học</a>
-    <a href="/Class/Manage/@classId" class="btn btn-info">👥 Quản lý lớp</a>
-    <a href="/Attendance/Take?sessionId=@session?.SessionID" class="btn btn-warning">📝 Ghi điểm danh</a>
-</div>
+    <div class="mb-3">
+        <a href="/Attendance/SessionsByClass?classId=@classId" class="btn btn-secondary">⬅️ Tất cả buổi học</a>
+        <a href="/Class/Manage/@classId" class="btn btn-info">👥 Quản lý lớp</a> 
+        <a href="/Attendance/Take?sessionId=@session.SessionID" class="btn btn-warning">📝 Ghi điểm danh</a>
+        <a href="/Attendance/ScanAll?sessionId=@session.SessionID" class="btn btn-sm btn-success">📸 Quét khuôn mặt</a>
+    </div>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Họ tên học sinh</th>
-            <th>Ngày</th>
-            <th>Có mặt</th>
-            <th>Giờ điểm danh</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
+    <table class="table table-bordered">
+        <thead>
             <tr>
-                <td>@item.Student.FullName</td>
-                <td>@item.Session.SessionDate.ToString("dd/MM/yyyy")</td>
-                <td>@(item.IsPresent ? "✅" : "❌")</td>
-                <td>@item.CheckedTime?.ToString("HH:mm")</td>
+                <th>Họ tên học sinh</th>
+                <th>Ngày</th>
+                <th>Có mặt</th>
+                <th>Giờ điểm danh</th>
             </tr>
-        }
-    </tbody>
-</table>
-    
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Student.FullName</td>
+                    <td>@item.Session.SessionDate.ToString("dd/MM/yyyy")</td>
+                    <td>@(item.IsPresent ? "✅" : "❌")</td>
+                    <td>@item.CheckedTime?.ToString("HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
