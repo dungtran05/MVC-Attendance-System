@@ -59,8 +59,12 @@
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
 
+        // Chuẩn hóa tên: bỏ dấu, chữ thường, không khoảng trắng
         function normalizeName(name) {
-            return name.toLowerCase().replace(/\s+/g, '');
+            return name.normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/\s+/g, '');
         }
 
         function updateStudentUI(name) {
@@ -105,7 +109,9 @@
 
                     for (const pred of predictions) {
                         const name = pred.class_name;
-                        if (sentNames.has(name)) continue;
+                        const normName = normalizeName(name);
+
+                        if (sentNames.has(normName)) continue;
 
                         await fetch("/Attendance/CheckInByName", {
                             method: "POST",
@@ -117,7 +123,7 @@
                             })
                         });
 
-                        sentNames.add(name);
+                        sentNames.add(normName);
                         updateStudentUI(name);
                         displayUniqueNameOnce(name);
                     }
@@ -136,7 +142,7 @@
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
 
-                intervalId = setInterval(sendFrameToAPI, 2000);
+                intervalId = setInterval(sendFrameToAPI, 5000);
             } catch (err) {
                 resultDiv.innerHTML = `<span class="text-danger">❌ Không thể mở webcam: ${err}</span>`;
             }
